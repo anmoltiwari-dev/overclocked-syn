@@ -1,7 +1,8 @@
 import { routing } from "@/i18n/routing";
 import type { Metadata } from "next";
-import { hasLocale } from "next-intl";
+import { hasLocale, NextIntlClientProvider } from "next-intl";
 import { notFound } from "next/navigation";
+import "@/app/globals.css";
 
 export const metadata: Metadata = {
   title: "Create Next App",
@@ -13,16 +14,27 @@ export default async function RootLayout({
   params,
 }: Readonly<{
   children: React.ReactNode;
-  params: Promise<{ locale: "en" | "es" }>;
+  params: Promise<{ locale: "en-US" | "es-ES" }>;
 }>) {
   const { locale } = await params;
+  let messages;
   if (!hasLocale(routing.locales, locale)) {
+    notFound();
+  }
+  try {
+    messages = (await import(`@/messages/${locale}.json`)).default;
+  } catch (error) {
+    console.error("Error loading messages for locale", locale, error);
     notFound();
   }
 
   return (
     <html lang={locale}>
-      <body>{children}</body>
+      <body>
+        <NextIntlClientProvider locale={locale} messages={messages}>
+          {children}
+        </NextIntlClientProvider>
+      </body>
     </html>
   );
 }
